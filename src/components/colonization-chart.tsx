@@ -77,8 +77,8 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
               }}
             />
             <Tooltip
-              formatter={(value: number) => [formatPercent(value), "Colonized"]}
-              labelFormatter={(label) => `Year ${formatYear(label)}`}
+              formatter={(value) => [formatPercent(Number(value)), "Colonized"]}
+              labelFormatter={(label) => `Year ${formatYear(Number(label))}`}
             />
             <Legend />
             <Line
