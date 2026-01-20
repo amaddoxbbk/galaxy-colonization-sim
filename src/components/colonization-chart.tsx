@@ -68,8 +68,14 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
               label={{ value: "Years", position: "insideBottom", offset: -5 }}
             />
             <YAxis
-              tickFormatter={(v) => `${v.toFixed(0)}%`}
-              domain={[0, 100]}
+              scale="log"
+              domain={[0.0000000001, 100]}
+              allowDataOverflow={true}
+              tickFormatter={(v) => {
+                if (v < 0.01) return v.toExponential(0);
+                if (v < 1) return `${v.toFixed(2)}%`;
+                return `${v.toFixed(0)}%`;
+              }}
               label={{
                 value: "% Colonized",
                 angle: -90,
