@@ -80,11 +80,12 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
               width={45}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
-                if (name === "mean") return [formatPercent(value), "Mean"];
-                if (name === "p90") return [formatPercent(value), "90th %ile"];
-                if (name === "p10") return [formatPercent(value), "10th %ile"];
-                return [formatPercent(value), name];
+              formatter={(value, name) => {
+                const v = Number(value);
+                if (name === "mean") return [formatPercent(v), "Mean"];
+                if (name === "p90") return [formatPercent(v), "90th %ile"];
+                if (name === "p10") return [formatPercent(v), "10th %ile"];
+                return [formatPercent(v), name];
               }}
               labelFormatter={(label) => `Year ${formatYear(Number(label))}`}
               contentStyle={{ fontSize: 12 }}
