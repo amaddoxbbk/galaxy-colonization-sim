@@ -1,9 +1,8 @@
 "use client";
 
 import {
-  ComposedChart,
+  LineChart,
   Line,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -11,13 +10,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TimeSeriesDataPoint } from "@/lib/simulation";
 
-interface ColonizationChartProps {
-  data: TimeSeriesDataPoint[];
+interface SpaghettiChartProps {
+  individualSims: { year: number; percentColonized: number }[][];
 }
 
-export function ColonizationChart({ data }: ColonizationChartProps) {
+export function SpaghettiChart({ individualSims }: SpaghettiChartProps) {
   const formatYear = (year: number): string => {
     if (year >= 1_000_000) {
       return `${(year / 1_000_000).toFixed(1)}M`;
@@ -28,18 +26,11 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
     return year.toString();
   };
 
-  const formatPercent = (value: number): string => {
-    if (value < 0.01) {
-      return value.toExponential(2);
-    }
-    return `${value.toFixed(2)}%`;
-  };
-
-  if (data.length === 0) {
+  if (individualSims.length === 0) {
     return (
       <Card className="h-full">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Colonization Progress</CardTitle>
+          <CardTitle className="text-base">Simulation Spread</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[250px]">
           <p className="text-muted-foreground text-sm">
@@ -50,15 +41,41 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
     );
   }
 
+  // Transform data: create a single array where each point has all sim values
+  const maxLength = Math.max(...individualSims.map((s) => s.length));
+  const combinedData: Record<string, number>[] = [];
+
+  for (let i = 0; i < maxLength; i++) {
+    const point: Record<string, number> = { year: i * (individualSims[0]?.[1]?.year - individualSims[0]?.[0]?.year || 100) };
+
+    // Get year from first available sim at this index
+    for (const sim of individualSims) {
+      if (sim[i]) {
+        point.year = sim[i].year;
+        break;
+      }
+    }
+
+    individualSims.forEach((sim, simIndex) => {
+      if (i < sim.length) {
+        point[`sim${simIndex}`] = sim[i].percentColonized;
+      } else if (sim.length > 0) {
+        point[`sim${simIndex}`] = sim[sim.length - 1].percentColonized;
+      }
+    });
+
+    combinedData.push(point);
+  }
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Colonization Progress</CardTitle>
+        <CardTitle className="text-base">Simulation Spread</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>
-          <ComposedChart
-            data={data}
+          <LineChart
+            data={combinedData}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -80,41 +97,27 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
               width={45}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
-                if (name === "mean") return [formatPercent(value), "Mean"];
-                if (name === "p90") return [formatPercent(value), "90th %ile"];
-                if (name === "p10") return [formatPercent(value), "10th %ile"];
-                return [formatPercent(value), name];
-              }}
+              formatter={(value: number) => [`${value.toFixed(4)}%`, ""]}
               labelFormatter={(label) => `Year ${formatYear(Number(label))}`}
               contentStyle={{ fontSize: 12 }}
             />
-            <Area
-              type="monotone"
-              dataKey="p90"
-              stroke="none"
-              fill="#8884d8"
-              fillOpacity={0.2}
-              name="p90"
-            />
-            <Area
-              type="monotone"
-              dataKey="p10"
-              stroke="none"
-              fill="#ffffff"
-              fillOpacity={1}
-              name="p10"
-            />
-            <Line
-              type="monotone"
-              dataKey="mean"
-              name="mean"
-              stroke="#8884d8"
-              strokeWidth={2}
-              dot={false}
-            />
-          </ComposedChart>
+            {individualSims.map((_, index) => (
+              <Line
+                key={index}
+                type="monotone"
+                dataKey={`sim${index}`}
+                stroke="#8884d8"
+                strokeWidth={1}
+                strokeOpacity={0.15}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ))}
+          </LineChart>
         </ResponsiveContainer>
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          {individualSims.length} individual simulation runs
+        </p>
       </CardContent>
     </Card>
   );

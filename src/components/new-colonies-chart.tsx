@@ -1,8 +1,7 @@
 "use client";
 
 import {
-  ComposedChart,
-  Line,
+  AreaChart,
   Area,
   XAxis,
   YAxis,
@@ -13,11 +12,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimeSeriesDataPoint } from "@/lib/simulation";
 
-interface ColonizationChartProps {
+interface NewColoniesChartProps {
   data: TimeSeriesDataPoint[];
 }
 
-export function ColonizationChart({ data }: ColonizationChartProps) {
+export function NewColoniesChart({ data }: NewColoniesChartProps) {
   const formatYear = (year: number): string => {
     if (year >= 1_000_000) {
       return `${(year / 1_000_000).toFixed(1)}M`;
@@ -28,18 +27,27 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
     return year.toString();
   };
 
-  const formatPercent = (value: number): string => {
-    if (value < 0.01) {
-      return value.toExponential(2);
+  const formatColonies = (value: number): string => {
+    if (value >= 1_000_000_000_000) {
+      return `${(value / 1_000_000_000_000).toFixed(1)}T`;
     }
-    return `${value.toFixed(2)}%`;
+    if (value >= 1_000_000_000) {
+      return `${(value / 1_000_000_000).toFixed(1)}B`;
+    }
+    if (value >= 1_000_000) {
+      return `${(value / 1_000_000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}K`;
+    }
+    return value.toFixed(0);
   };
 
   if (data.length === 0) {
     return (
       <Card className="h-full">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Colonization Progress</CardTitle>
+          <CardTitle className="text-base">New Colonies Per Round</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[250px]">
           <p className="text-muted-foreground text-sm">
@@ -50,14 +58,20 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
     );
   }
 
+  // Find the maximum value for better axis scaling
+  const maxColonies = Math.max(...data.map((d) => d.meanNewColonies));
+  const minNonZero = Math.min(
+    ...data.filter((d) => d.meanNewColonies > 0).map((d) => d.meanNewColonies)
+  ) || 1;
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Colonization Progress</CardTitle>
+        <CardTitle className="text-base">New Colonies Per Round</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>
-          <ComposedChart
+          <AreaChart
             data={data}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
           >
@@ -69,51 +83,26 @@ export function ColonizationChart({ data }: ColonizationChartProps) {
             />
             <YAxis
               scale="log"
-              domain={[0.0000000001, 100]}
+              domain={[Math.max(0.1, minNonZero * 0.1), maxColonies * 1.5]}
               allowDataOverflow={true}
-              tickFormatter={(v) => {
-                if (v < 0.01) return v.toExponential(0);
-                if (v < 1) return `${v.toFixed(2)}%`;
-                return `${v.toFixed(0)}%`;
-              }}
+              tickFormatter={formatColonies}
               tick={{ fontSize: 11 }}
               width={45}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
-                if (name === "mean") return [formatPercent(value), "Mean"];
-                if (name === "p90") return [formatPercent(value), "90th %ile"];
-                if (name === "p10") return [formatPercent(value), "10th %ile"];
-                return [formatPercent(value), name];
-              }}
+              formatter={(value: number) => [formatColonies(value), "New Colonies"]}
               labelFormatter={(label) => `Year ${formatYear(Number(label))}`}
               contentStyle={{ fontSize: 12 }}
             />
             <Area
               type="monotone"
-              dataKey="p90"
-              stroke="none"
-              fill="#8884d8"
-              fillOpacity={0.2}
-              name="p90"
-            />
-            <Area
-              type="monotone"
-              dataKey="p10"
-              stroke="none"
-              fill="#ffffff"
-              fillOpacity={1}
-              name="p10"
-            />
-            <Line
-              type="monotone"
-              dataKey="mean"
-              name="mean"
-              stroke="#8884d8"
+              dataKey="meanNewColonies"
+              stroke="#82ca9d"
+              fill="#82ca9d"
+              fillOpacity={0.4}
               strokeWidth={2}
-              dot={false}
             />
-          </ComposedChart>
+          </AreaChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>

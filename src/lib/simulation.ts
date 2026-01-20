@@ -7,9 +7,43 @@ export interface SimulationParams {
   n_simulations: number;
 }
 
+// Legacy interface for backward compatibility
 export interface SimulationDataPoint {
   year: number;
   percentColonized: number;
+}
+
+// New detailed interfaces
+export interface SingleSimulationResult {
+  percentages: number[];
+  newColoniesPerRound: number[];
+  milestones: {
+    pct1Year: number | null;
+    pct50Year: number | null;
+    pct99Year: number | null;
+  };
+  totalShipsLost: number;
+}
+
+export interface TimeSeriesDataPoint {
+  year: number;
+  mean: number;
+  p10: number;
+  p90: number;
+  meanNewColonies: number;
+}
+
+export interface SimulationStats {
+  timeTo1Pct: { mean: number; stdDev: number };
+  timeTo50Pct: { mean: number; stdDev: number };
+  timeTo99Pct: { mean: number; stdDev: number };
+  totalShipsLost: { mean: number; stdDev: number };
+}
+
+export interface SimulationResults {
+  timeSeriesData: TimeSeriesDataPoint[];
+  individualSims: { year: number; percentColonized: number }[][];
+  stats: SimulationStats;
 }
 
 export const DEFAULT_PARAMS: SimulationParams = {
@@ -21,49 +55,60 @@ export const DEFAULT_PARAMS: SimulationParams = {
   n_simulations: 1_000,
 };
 
-function runSingleSimulation(params: SimulationParams): number[] {
+function runSingleSimulation(params: SimulationParams): SingleSimulationResult {
   const {
     total_systems,
     ship_survival_prob,
     colony_found_prob,
+    years_per_round,
     max_rounds,
   } = params;
 
   const percentages: number[] = [];
-  let colonized = 1; // Start with 1 colonized system
+  const newColoniesPerRound: number[] = [];
+  const milestones: SingleSimulationResult["milestones"] = {
+    pct1Year: null,
+    pct50Year: null,
+    pct99Year: null,
+  };
+  let totalShipsLost = 0;
+  let colonized = 1;
 
   for (let round = 0; round < max_rounds; round++) {
     const percentColonized = (colonized / total_systems) * 100;
     percentages.push(percentColonized);
 
-    // Stop if we've colonized everything
+    // Track milestones
+    const year = round * years_per_round;
+    if (milestones.pct1Year === null && percentColonized >= 1) {
+      milestones.pct1Year = year;
+    }
+    if (milestones.pct50Year === null && percentColonized >= 50) {
+      milestones.pct50Year = year;
+    }
+    if (milestones.pct99Year === null && percentColonized >= 99) {
+      milestones.pct99Year = year;
+    }
+
     if (colonized >= total_systems) {
+      newColoniesPerRound.push(0);
       break;
     }
 
-    // Each colonized system sends one ship
-    // Combined probability of survival AND establishing colony
     const successProb = ship_survival_prob * colony_found_prob;
-
-    // Expected new colonies from binomial distribution
-    // For large numbers, we use the expected value + some variance
     const remainingSystems = total_systems - colonized;
     const attempts = Math.min(colonized, remainingSystems);
 
-    // Simulate new colonies using binomial approximation
     let newColonies = 0;
     if (attempts < 1000) {
-      // For small numbers, simulate each attempt
       for (let i = 0; i < attempts; i++) {
         if (Math.random() < successProb) {
           newColonies++;
         }
       }
     } else {
-      // For large numbers, use normal approximation to binomial
       const mean = attempts * successProb;
       const stdDev = Math.sqrt(attempts * successProb * (1 - successProb));
-      // Box-Muller transform for normal distribution
       const u1 = Math.random();
       const u2 = Math.random();
       const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
@@ -71,73 +116,54 @@ function runSingleSimulation(params: SimulationParams): number[] {
       newColonies = Math.max(0, newColonies);
     }
 
-    // Cap new colonies at remaining systems
     newColonies = Math.min(newColonies, remainingSystems);
+    newColoniesPerRound.push(newColonies);
+
+    // Track ships lost (attempts - successes)
+    totalShipsLost += attempts - newColonies;
+
     colonized += newColonies;
 
-    // Early termination if colonization is complete
     if (percentColonized >= 100) {
       break;
     }
   }
 
-  return percentages;
+  return {
+    percentages,
+    newColoniesPerRound,
+    milestones,
+    totalShipsLost,
+  };
 }
 
-export function runSimulation(params: SimulationParams): SimulationDataPoint[] {
-  const { years_per_round, n_simulations, max_rounds } = params;
-
-  // Run multiple simulations
-  const allResults: number[][] = [];
-
-  for (let sim = 0; sim < n_simulations; sim++) {
-    allResults.push(runSingleSimulation(params));
-  }
-
-  // Find the maximum length (some simulations may end early)
-  const maxLength = Math.max(...allResults.map(r => r.length));
-
-  // Average the results at each time point
-  const averagedData: SimulationDataPoint[] = [];
-
-  for (let i = 0; i < maxLength; i++) {
-    const year = i * years_per_round;
-    let sum = 0;
-    let count = 0;
-
-    for (const result of allResults) {
-      if (i < result.length) {
-        sum += result[i];
-        count++;
-      } else {
-        // If simulation ended early, use the last value (100%)
-        sum += result[result.length - 1];
-        count++;
-      }
-    }
-
-    averagedData.push({
-      year,
-      percentColonized: sum / count,
-    });
-
-    // Stop adding data points once we've reached 100% colonization
-    if (sum / count >= 99.99) {
-      break;
-    }
-  }
-
-  return averagedData;
+function computePercentile(values: number[], percentile: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = (percentile / 100) * (sorted.length - 1);
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sorted[lower];
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
 }
 
-// Run simulation in chunks to avoid blocking UI
+function computeMeanAndStdDev(values: number[]): { mean: number; stdDev: number } {
+  const validValues = values.filter((v) => v !== null && !isNaN(v));
+  if (validValues.length === 0) return { mean: 0, stdDev: 0 };
+
+  const mean = validValues.reduce((a, b) => a + b, 0) / validValues.length;
+  const squaredDiffs = validValues.map((v) => Math.pow(v - mean, 2));
+  const variance = squaredDiffs.reduce((a, b) => a + b, 0) / validValues.length;
+  return { mean, stdDev: Math.sqrt(variance) };
+}
+
 export async function runSimulationAsync(
   params: SimulationParams,
   onProgress?: (progress: number) => void
-): Promise<SimulationDataPoint[]> {
-  const { years_per_round, n_simulations, max_rounds } = params;
+): Promise<SimulationResults> {
+  const { years_per_round, n_simulations } = params;
   const chunkSize = 50;
-  const allResults: number[][] = [];
+  const allResults: SingleSimulationResult[] = [];
+  const sampleSize = Math.min(50, n_simulations);
 
   for (let i = 0; i < n_simulations; i += chunkSize) {
     const chunkEnd = Math.min(i + chunkSize, n_simulations);
@@ -150,37 +176,119 @@ export async function runSimulationAsync(
       onProgress((chunkEnd / n_simulations) * 100);
     }
 
-    // Yield to UI
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
   // Find the maximum length
-  const maxLength = Math.max(...allResults.map(r => r.length));
+  const maxLength = Math.max(...allResults.map((r) => r.percentages.length));
 
-  // Average the results
+  // Build time series data with percentiles
+  const timeSeriesData: TimeSeriesDataPoint[] = [];
+
+  for (let i = 0; i < maxLength; i++) {
+    const year = i * years_per_round;
+    const percentagesAtTime: number[] = [];
+    const newColoniesAtTime: number[] = [];
+
+    for (const result of allResults) {
+      if (i < result.percentages.length) {
+        percentagesAtTime.push(result.percentages[i]);
+      } else {
+        percentagesAtTime.push(result.percentages[result.percentages.length - 1]);
+      }
+
+      if (i < result.newColoniesPerRound.length) {
+        newColoniesAtTime.push(result.newColoniesPerRound[i]);
+      } else {
+        newColoniesAtTime.push(0);
+      }
+    }
+
+    const mean = percentagesAtTime.reduce((a, b) => a + b, 0) / percentagesAtTime.length;
+    const p10 = computePercentile(percentagesAtTime, 10);
+    const p90 = computePercentile(percentagesAtTime, 90);
+    const meanNewColonies =
+      newColoniesAtTime.reduce((a, b) => a + b, 0) / newColoniesAtTime.length;
+
+    timeSeriesData.push({ year, mean, p10, p90, meanNewColonies });
+
+    if (mean >= 99.99) {
+      break;
+    }
+  }
+
+  // Sample individual simulations for spaghetti plot
+  const sampleIndices = new Set<number>();
+  while (sampleIndices.size < sampleSize) {
+    sampleIndices.add(Math.floor(Math.random() * n_simulations));
+  }
+
+  const individualSims: { year: number; percentColonized: number }[][] = [];
+  for (const idx of sampleIndices) {
+    const result = allResults[idx];
+    const simData = result.percentages.map((pct, i) => ({
+      year: i * years_per_round,
+      percentColonized: pct,
+    }));
+    individualSims.push(simData);
+  }
+
+  // Compute statistics
+  const timeTo1PctValues = allResults
+    .map((r) => r.milestones.pct1Year)
+    .filter((v): v is number => v !== null);
+  const timeTo50PctValues = allResults
+    .map((r) => r.milestones.pct50Year)
+    .filter((v): v is number => v !== null);
+  const timeTo99PctValues = allResults
+    .map((r) => r.milestones.pct99Year)
+    .filter((v): v is number => v !== null);
+  const shipsLostValues = allResults.map((r) => r.totalShipsLost);
+
+  const stats: SimulationStats = {
+    timeTo1Pct: computeMeanAndStdDev(timeTo1PctValues),
+    timeTo50Pct: computeMeanAndStdDev(timeTo50PctValues),
+    timeTo99Pct: computeMeanAndStdDev(timeTo99PctValues),
+    totalShipsLost: computeMeanAndStdDev(shipsLostValues),
+  };
+
+  return {
+    timeSeriesData,
+    individualSims,
+    stats,
+  };
+}
+
+// Legacy function for backward compatibility
+export function runSimulation(params: SimulationParams): SimulationDataPoint[] {
+  const { years_per_round, n_simulations } = params;
+  const allResults: SingleSimulationResult[] = [];
+
+  for (let sim = 0; sim < n_simulations; sim++) {
+    allResults.push(runSingleSimulation(params));
+  }
+
+  const maxLength = Math.max(...allResults.map((r) => r.percentages.length));
   const averagedData: SimulationDataPoint[] = [];
 
   for (let i = 0; i < maxLength; i++) {
     const year = i * years_per_round;
     let sum = 0;
-    let count = 0;
 
     for (const result of allResults) {
-      if (i < result.length) {
-        sum += result[i];
-        count++;
+      if (i < result.percentages.length) {
+        sum += result.percentages[i];
       } else {
-        sum += result[result.length - 1];
-        count++;
+        sum += result.percentages[result.percentages.length - 1];
       }
     }
 
     averagedData.push({
       year,
-      percentColonized: sum / count,
+      percentColonized: sum / allResults.length,
     });
 
-    if (sum / count >= 99.99) {
+    if (sum / allResults.length >= 99.99) {
       break;
     }
   }
