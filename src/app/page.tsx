@@ -10,47 +10,68 @@ import {
   SimulationParams,
   SimulationResults,
   DEFAULT_PARAMS,
+  PESSIMISTIC_PARAMS,
   runSimulationAsync,
 } from "@/lib/simulation";
 
 export default function Home() {
-  const [params, setParams] = useState<SimulationParams>(DEFAULT_PARAMS);
-  const [params2, setParams2] = useState<SimulationParams>(DEFAULT_PARAMS);
-  const [results, setResults] = useState<SimulationResults | null>(null);
+  const [params1, setParams1] = useState<SimulationParams>(DEFAULT_PARAMS);
+  const [params2, setParams2] = useState<SimulationParams>(PESSIMISTIC_PARAMS);
+  const [results1, setResults1] = useState<SimulationResults | null>(null);
   const [results2, setResults2] = useState<SimulationResults | null>(null);
-  const [compareMode, setCompareMode] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [isRunning1, setIsRunning1] = useState(false);
+  const [isRunning2, setIsRunning2] = useState(false);
+  const [progress1, setProgress1] = useState(0);
   const [progress2, setProgress2] = useState(0);
 
-  const handleRunSimulation = async () => {
-    setIsRunning(true);
-    setProgress(0);
+  const handleRunBothSimulations = async () => {
+    setIsRunning1(true);
+    setIsRunning2(true);
+    setProgress1(0);
     setProgress2(0);
-    setResults(null);
+    setResults1(null);
     setResults2(null);
 
-    try {
-      // Run first simulation
-      const simResults = await runSimulationAsync(params, (p) => {
-        setProgress(p);
+    // Run both simulations in parallel
+    const sim1Promise = runSimulationAsync(params1, (p) => {
+      setProgress1(p);
+    })
+      .then((results) => {
+        setResults1(results);
+        setIsRunning1(false);
+        setProgress1(100);
+      })
+      .catch((error) => {
+        console.error("Simulation 1 failed:", error);
+        setIsRunning1(false);
       });
-      setResults(simResults);
 
-      // Run second simulation if compare mode is on
-      if (compareMode) {
-        const simResults2 = await runSimulationAsync(params2, (p) => {
-          setProgress2(p);
-        });
-        setResults2(simResults2);
-      }
-    } catch (error) {
-      console.error("Simulation failed:", error);
-    } finally {
-      setIsRunning(false);
-      setProgress(100);
-      if (compareMode) setProgress2(100);
-    }
+    const sim2Promise = runSimulationAsync(params2, (p) => {
+      setProgress2(p);
+    })
+      .then((results) => {
+        setResults2(results);
+        setIsRunning2(false);
+        setProgress2(100);
+      })
+      .catch((error) => {
+        console.error("Simulation 2 failed:", error);
+        setIsRunning2(false);
+      });
+
+    await Promise.all([sim1Promise, sim2Promise]);
+  };
+
+  const handleReset1 = () => {
+    setParams1(DEFAULT_PARAMS);
+    setResults1(null);
+    setProgress1(0);
+  };
+
+  const handleReset2 = () => {
+    setParams2(DEFAULT_PARAMS);
+    setResults2(null);
+    setProgress2(0);
   };
 
   return (
@@ -62,36 +83,51 @@ export default function Home() {
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3 flex-1 min-h-0">
-          <div className="flex flex-col min-h-0 overflow-auto">
+          {/* Sidebar - two forms stacked */}
+          <div className="flex flex-col gap-3 min-h-0">
             <SimulationForm
-              params={params}
-              params2={params2}
-              onParamsChange={setParams}
-              onParams2Change={setParams2}
-              compareMode={compareMode}
-              onCompareModeChange={setCompareMode}
-              onRunSimulation={handleRunSimulation}
-              isRunning={isRunning}
-              progress={progress}
-              progress2={progress2}
+              params={params1}
+              onParamsChange={setParams1}
+              onRunSimulation={handleRunBothSimulations}
+              onReset={handleReset1}
+              isRunning={isRunning1}
+              progress={progress1}
+              label="Simulation 1"
+              color="bg-[#8884d8]"
+            />
+            <SimulationForm
+              params={params2}
+              onParamsChange={setParams2}
+              onRunSimulation={handleRunBothSimulations}
+              onReset={handleReset2}
+              isRunning={isRunning2}
+              progress={progress2}
+              label="Simulation 2"
+              color="bg-[#82ca9d]"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          {/* Chart grid - constrained to fit */}
+          <div className="grid grid-cols-2 grid-rows-2 gap-3 min-h-0">
             <ColonizationChart
-              data={results?.timeSeriesData ?? []}
-              data2={compareMode ? results2?.timeSeriesData : undefined}
+              data={results1?.timeSeriesData ?? []}
+              data2={results2?.timeSeriesData}
+              isLoading={isRunning1 || isRunning2}
             />
             <SpaghettiChart
-              individualSims={results?.individualSims ?? []}
-              individualSims2={compareMode ? results2?.individualSims : undefined}
+              individualSims={results1?.individualSims ?? []}
+              individualSims2={results2?.individualSims}
+              isLoading={isRunning1 || isRunning2}
             />
             <NewColoniesChart
-              data={results?.timeSeriesData ?? []}
-              data2={compareMode ? results2?.timeSeriesData : undefined}
+              data={results1?.timeSeriesData ?? []}
+              data2={results2?.timeSeriesData}
+              isLoading={isRunning1 || isRunning2}
             />
             <StatsPanel
-              stats={results?.stats ?? null}
-              stats2={compareMode ? results2?.stats : undefined}
+              stats={results1?.stats ?? null}
+              stats2={results2?.stats}
+              isLoading={isRunning1 || isRunning2}
             />
           </div>
         </div>

@@ -14,9 +14,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface SpaghettiChartProps {
   individualSims: { year: number; percentColonized: number }[][];
   individualSims2?: { year: number; percentColonized: number }[][];
+  isLoading?: boolean;
 }
 
-export function SpaghettiChart({ individualSims, individualSims2 }: SpaghettiChartProps) {
+export function SpaghettiChart({ individualSims, individualSims2, isLoading }: SpaghettiChartProps) {
   const formatYear = (year: number): string => {
     if (year >= 1_000_000) {
       return `${(year / 1_000_000).toFixed(1)}M`;
@@ -29,11 +30,11 @@ export function SpaghettiChart({ individualSims, individualSims2 }: SpaghettiCha
 
   if (individualSims.length === 0) {
     return (
-      <Card className="h-full">
+      <Card className="h-full flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Simulation Spread</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[180px]">
+        <CardContent className="flex items-center justify-center flex-1 min-h-0">
           <p className="text-muted-foreground text-sm">
             Run a simulation to see results
           </p>
@@ -42,58 +43,46 @@ export function SpaghettiChart({ individualSims, individualSims2 }: SpaghettiCha
     );
   }
 
-  // Get years per round from data
-  const yearsPerRound = individualSims[0]?.[1]?.year - individualSims[0]?.[0]?.year || 100;
+  // Build combined data by merging all years from both simulation sets
+  const yearMap = new Map<number, Record<string, number>>();
 
-  // Find max length across all sims
-  const maxLength1 = Math.max(...individualSims.map((s) => s.length));
-  const maxLength2 = individualSims2 ? Math.max(...individualSims2.map((s) => s.length)) : 0;
-  const maxLength = Math.max(maxLength1, maxLength2);
-
-  // Build combined data
-  const combinedData: Record<string, number>[] = [];
-
-  for (let i = 0; i < maxLength; i++) {
-    const point: Record<string, number> = { year: i * yearsPerRound };
-
-    // Get year from first available sim at this index
-    for (const sim of individualSims) {
-      if (sim[i]) {
-        point.year = sim[i].year;
-        break;
+  // Add all data points from sim 1
+  individualSims.forEach((sim, simIndex) => {
+    sim.forEach((point) => {
+      if (!yearMap.has(point.year)) {
+        yearMap.set(point.year, { year: point.year });
       }
-    }
-
-    // Add sim 1 data
-    individualSims.forEach((sim, simIndex) => {
-      if (i < sim.length) {
-        point[`sim1_${simIndex}`] = sim[i].percentColonized;
-      } else if (sim.length > 0) {
-        point[`sim1_${simIndex}`] = sim[sim.length - 1].percentColonized;
-      }
+      yearMap.get(point.year)![`sim1_${simIndex}`] = point.percentColonized;
     });
+  });
 
-    // Add sim 2 data
-    if (individualSims2) {
-      individualSims2.forEach((sim, simIndex) => {
-        if (i < sim.length) {
-          point[`sim2_${simIndex}`] = sim[i].percentColonized;
-        } else if (sim.length > 0) {
-          point[`sim2_${simIndex}`] = sim[sim.length - 1].percentColonized;
+  // Add all data points from sim 2
+  if (individualSims2) {
+    individualSims2.forEach((sim, simIndex) => {
+      sim.forEach((point) => {
+        if (!yearMap.has(point.year)) {
+          yearMap.set(point.year, { year: point.year });
         }
+        yearMap.get(point.year)![`sim2_${simIndex}`] = point.percentColonized;
       });
-    }
-
-    combinedData.push(point);
+    });
   }
 
+  // Convert to sorted array
+  const combinedData = Array.from(yearMap.values()).sort((a, b) => a.year - b.year);
+
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col relative">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Simulation Spread</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={180}>
+      <CardContent className="flex-1 flex flex-col min-h-0">
+        {isLoading && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-xl">
+            <p className="text-muted-foreground text-sm">Updating...</p>
+          </div>
+        )}
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={combinedData}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}

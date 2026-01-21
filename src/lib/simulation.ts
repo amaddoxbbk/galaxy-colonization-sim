@@ -46,11 +46,22 @@ export interface SimulationResults {
   stats: SimulationStats;
 }
 
+// Optimistic scenario: fast ships, high success rates
 export const DEFAULT_PARAMS: SimulationParams = {
   total_systems: 200_000_000_000,
-  ship_survival_prob: 0.25,
-  colony_found_prob: 0.25,
+  ship_survival_prob: 0.5,
+  colony_found_prob: 0.5,
   years_per_round: 100,
+  max_rounds: 10_000,
+  n_simulations: 1_000,
+};
+
+// Pessimistic scenario: slow ships, low success rates
+export const PESSIMISTIC_PARAMS: SimulationParams = {
+  total_systems: 200_000_000_000,
+  ship_survival_prob: 0.1,
+  colony_found_prob: 0.1,
+  years_per_round: 1000,
   max_rounds: 10_000,
   n_simulations: 1_000,
 };

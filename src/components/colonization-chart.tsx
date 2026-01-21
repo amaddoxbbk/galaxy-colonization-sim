@@ -17,9 +17,10 @@ import { TimeSeriesDataPoint } from "@/lib/simulation";
 interface ColonizationChartProps {
   data: TimeSeriesDataPoint[];
   data2?: TimeSeriesDataPoint[];
+  isLoading?: boolean;
 }
 
-export function ColonizationChart({ data, data2 }: ColonizationChartProps) {
+export function ColonizationChart({ data, data2, isLoading }: ColonizationChartProps) {
   const formatYear = (year: number): string => {
     if (year >= 1_000_000) {
       return `${(year / 1_000_000).toFixed(1)}M`;
@@ -39,11 +40,11 @@ export function ColonizationChart({ data, data2 }: ColonizationChartProps) {
 
   if (data.length === 0) {
     return (
-      <Card className="h-full">
+      <Card className="h-full flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Colonization Progress</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[180px]">
+        <CardContent className="flex items-center justify-center flex-1 min-h-0">
           <p className="text-muted-foreground text-sm">
             Run a simulation to see results
           </p>
@@ -52,39 +53,60 @@ export function ColonizationChart({ data, data2 }: ColonizationChartProps) {
     );
   }
 
-  // Merge data for dual display
-  const mergedData = data.map((d, i) => ({
-    year: d.year,
-    mean1: d.mean,
-    p10_1: d.p10,
-    p90_1: d.p90,
-    mean2: data2?.[i]?.mean,
-    p10_2: data2?.[i]?.p10,
-    p90_2: data2?.[i]?.p90,
-  }));
+  // Merge data by year (not by index) to handle different time scales
+  const yearMap = new Map<number, {
+    mean1?: number;
+    p10_1?: number;
+    p90_1?: number;
+    mean2?: number;
+    p10_2?: number;
+    p90_2?: number;
+  }>();
 
-  // Add any extra points from data2 that extend beyond data
-  if (data2 && data2.length > data.length) {
-    for (let i = data.length; i < data2.length; i++) {
-      mergedData.push({
-        year: data2[i].year,
-        mean1: undefined as unknown as number,
-        p10_1: undefined as unknown as number,
-        p90_1: undefined as unknown as number,
-        mean2: data2[i].mean,
-        p10_2: data2[i].p10,
-        p90_2: data2[i].p90,
-      });
+  // Add all years from data1
+  for (const d of data) {
+    yearMap.set(d.year, {
+      mean1: d.mean,
+      p10_1: d.p10,
+      p90_1: d.p90,
+    });
+  }
+
+  // Add/merge years from data2
+  if (data2) {
+    for (const d of data2) {
+      const existing = yearMap.get(d.year);
+      if (existing) {
+        existing.mean2 = d.mean;
+        existing.p10_2 = d.p10;
+        existing.p90_2 = d.p90;
+      } else {
+        yearMap.set(d.year, {
+          mean2: d.mean,
+          p10_2: d.p10,
+          p90_2: d.p90,
+        });
+      }
     }
   }
 
+  // Convert to array and sort by year
+  const mergedData = Array.from(yearMap.entries())
+    .map(([year, values]) => ({ year, ...values }))
+    .sort((a, b) => a.year - b.year);
+
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col relative">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Colonization Progress</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={180}>
+      <CardContent className="flex-1 min-h-0">
+        {isLoading && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-xl">
+            <p className="text-muted-foreground text-sm">Updating...</p>
+          </div>
+        )}
+        <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={mergedData}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
@@ -96,14 +118,8 @@ export function ColonizationChart({ data, data2 }: ColonizationChartProps) {
               tick={{ fontSize: 11 }}
             />
             <YAxis
-              scale="log"
-              domain={[0.0000000001, 100]}
-              allowDataOverflow={true}
-              tickFormatter={(v) => {
-                if (v < 0.01) return v.toExponential(0);
-                if (v < 1) return `${v.toFixed(2)}%`;
-                return `${v.toFixed(0)}%`;
-              }}
+              domain={[0, 100]}
+              tickFormatter={(v) => `${v}%`}
               tick={{ fontSize: 11 }}
               width={45}
             />
