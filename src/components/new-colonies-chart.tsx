@@ -90,7 +90,7 @@ export function NewColoniesChart({ data }: NewColoniesChartProps) {
               width={45}
             />
             <Tooltip
-              formatter={(value: number) => [formatColonies(value), "New Colonies"]}
+              formatter={(value) => [formatColonies(Number(value)), "New Colonies"]}
               labelFormatter={(label) => `Year ${formatYear(Number(label))}`}
               contentStyle={{ fontSize: 12 }}
             />

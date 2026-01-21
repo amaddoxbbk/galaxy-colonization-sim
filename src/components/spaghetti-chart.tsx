@@ -97,7 +97,7 @@ export function SpaghettiChart({ individualSims }: SpaghettiChartProps) {
               width={45}
             />
             <Tooltip
-              formatter={(value: number) => [`${value.toFixed(4)}%`, ""]}
+              formatter={(value) => [`${Number(value).toFixed(4)}%`, ""]}
               labelFormatter={(label) => `Year ${formatYear(Number(label))}`}
               contentStyle={{ fontSize: 12 }}
             />
