@@ -5,9 +5,10 @@ import { SimulationStats } from "@/lib/simulation";
 
 interface StatsPanelProps {
   stats: SimulationStats | null;
+  stats2?: SimulationStats | null;
 }
 
-export function StatsPanel({ stats }: StatsPanelProps) {
+export function StatsPanel({ stats, stats2 }: StatsPanelProps) {
   const formatYears = (value: number): string => {
     if (value >= 1_000_000) {
       return `${(value / 1_000_000).toFixed(1)}M`;
@@ -20,16 +21,16 @@ export function StatsPanel({ stats }: StatsPanelProps) {
 
   const formatShips = (value: number): string => {
     if (value >= 1_000_000_000_000_000) {
-      return `${(value / 1_000_000_000_000_000).toFixed(1)} quadrillion`;
+      return `${(value / 1_000_000_000_000_000).toFixed(1)}Q`;
     }
     if (value >= 1_000_000_000_000) {
-      return `${(value / 1_000_000_000_000).toFixed(1)} trillion`;
+      return `${(value / 1_000_000_000_000).toFixed(1)}T`;
     }
     if (value >= 1_000_000_000) {
-      return `${(value / 1_000_000_000).toFixed(1)} billion`;
+      return `${(value / 1_000_000_000).toFixed(1)}B`;
     }
     if (value >= 1_000_000) {
-      return `${(value / 1_000_000).toFixed(1)} million`;
+      return `${(value / 1_000_000).toFixed(1)}M`;
     }
     return value.toFixed(0);
   };
@@ -52,29 +53,29 @@ export function StatsPanel({ stats }: StatsPanelProps) {
   const statItems = [
     {
       label: "Time to 1%",
-      value: stats.timeTo1Pct.mean,
-      stdDev: stats.timeTo1Pct.stdDev,
+      value1: stats.timeTo1Pct,
+      value2: stats2?.timeTo1Pct,
       format: formatYears,
-      unit: "years",
+      unit: "yrs",
     },
     {
       label: "Time to 50%",
-      value: stats.timeTo50Pct.mean,
-      stdDev: stats.timeTo50Pct.stdDev,
+      value1: stats.timeTo50Pct,
+      value2: stats2?.timeTo50Pct,
       format: formatYears,
-      unit: "years",
+      unit: "yrs",
     },
     {
       label: "Time to 99%",
-      value: stats.timeTo99Pct.mean,
-      stdDev: stats.timeTo99Pct.stdDev,
+      value1: stats.timeTo99Pct,
+      value2: stats2?.timeTo99Pct,
       format: formatYears,
-      unit: "years",
+      unit: "yrs",
     },
     {
       label: "Ships Lost",
-      value: stats.totalShipsLost.mean,
-      stdDev: stats.totalShipsLost.stdDev,
+      value1: stats.totalShipsLost,
+      value2: stats2?.totalShipsLost,
       format: formatShips,
       unit: "",
     },
@@ -86,29 +87,60 @@ export function StatsPanel({ stats }: StatsPanelProps) {
         <CardTitle className="text-base">Key Statistics</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
+          {/* Header row for compare mode */}
+          {stats2 && (
+            <div className="flex justify-end gap-4 text-xs font-medium border-b pb-2">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-[#8884d8]" />
+                <span>Sim 1</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-[#82ca9d]" />
+                <span>Sim 2</span>
+              </div>
+            </div>
+          )}
+
           {statItems.map((item) => (
-            <div key={item.label} className="flex justify-between items-baseline">
-              <span className="text-sm text-muted-foreground">{item.label}</span>
-              <div className="text-right">
-                <span className="text-lg font-semibold">
-                  {item.format(item.value)}
-                </span>
-                {item.unit && (
-                  <span className="text-sm text-muted-foreground ml-1">
+            <div key={item.label} className="space-y-1">
+              <div className="text-xs text-muted-foreground">{item.label}</div>
+              <div className="flex justify-between items-baseline gap-2">
+                {/* Sim 1 value */}
+                <div className={stats2 ? "flex-1" : "flex-1 text-right"}>
+                  <span className="text-base font-semibold">
+                    {item.format(item.value1.mean)}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-1">
                     {item.unit}
                   </span>
-                )}
-                <div className="text-xs text-muted-foreground">
-                  ± {item.format(item.stdDev)}
+                  <div className="text-xs text-muted-foreground">
+                    ± {item.format(item.value1.stdDev)}
+                  </div>
                 </div>
+
+                {/* Sim 2 value */}
+                {stats2 && item.value2 && (
+                  <div className="flex-1 text-right">
+                    <span className="text-base font-semibold text-[#82ca9d]">
+                      {item.format(item.value2.mean)}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-1">
+                      {item.unit}
+                    </span>
+                    <div className="text-xs text-muted-foreground">
+                      ± {item.format(item.value2.stdDev)}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
-        <div className="mt-4 pt-4 border-t">
+
+        <div className="mt-3 pt-3 border-t">
           <p className="text-xs text-muted-foreground text-center">
-            Values shown as mean ± standard deviation
+            Mean ± standard deviation
           </p>
         </div>
       </CardContent>

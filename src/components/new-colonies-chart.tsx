@@ -1,22 +1,25 @@
 "use client";
 
 import {
-  AreaChart,
+  ComposedChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimeSeriesDataPoint } from "@/lib/simulation";
 
 interface NewColoniesChartProps {
   data: TimeSeriesDataPoint[];
+  data2?: TimeSeriesDataPoint[];
 }
 
-export function NewColoniesChart({ data }: NewColoniesChartProps) {
+export function NewColoniesChart({ data, data2 }: NewColoniesChartProps) {
   const formatYear = (year: number): string => {
     if (year >= 1_000_000) {
       return `${(year / 1_000_000).toFixed(1)}M`;
@@ -58,11 +61,32 @@ export function NewColoniesChart({ data }: NewColoniesChartProps) {
     );
   }
 
+  // Merge data for dual display
+  const mergedData = data.map((d, i) => ({
+    year: d.year,
+    colonies1: d.meanNewColonies,
+    colonies2: data2?.[i]?.meanNewColonies,
+  }));
+
+  // Add any extra points from data2
+  if (data2 && data2.length > data.length) {
+    for (let i = data.length; i < data2.length; i++) {
+      mergedData.push({
+        year: data2[i].year,
+        colonies1: undefined as unknown as number,
+        colonies2: data2[i].meanNewColonies,
+      });
+    }
+  }
+
   // Find the maximum value for better axis scaling
-  const maxColonies = Math.max(...data.map((d) => d.meanNewColonies));
-  const minNonZero = Math.min(
-    ...data.filter((d) => d.meanNewColonies > 0).map((d) => d.meanNewColonies)
-  ) || 1;
+  const allValues = [
+    ...data.map((d) => d.meanNewColonies),
+    ...(data2?.map((d) => d.meanNewColonies) || []),
+  ].filter((v) => v > 0);
+
+  const maxColonies = Math.max(...allValues);
+  const minNonZero = Math.min(...allValues) || 1;
 
   return (
     <Card className="h-full">
@@ -71,8 +95,8 @@ export function NewColoniesChart({ data }: NewColoniesChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>
-          <AreaChart
-            data={data}
+          <ComposedChart
+            data={mergedData}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -90,19 +114,39 @@ export function NewColoniesChart({ data }: NewColoniesChartProps) {
               width={45}
             />
             <Tooltip
-              formatter={(value) => [formatColonies(Number(value)), "New Colonies"]}
+              formatter={(value, name) => {
+                const label = name === "colonies1" ? "Sim 1" : "Sim 2";
+                return [formatColonies(Number(value)), label];
+              }}
               labelFormatter={(label) => `Year ${formatYear(Number(label))}`}
               contentStyle={{ fontSize: 12 }}
             />
+            {data2 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+
+            {/* Sim 1 - solid area */}
             <Area
               type="monotone"
-              dataKey="meanNewColonies"
+              dataKey="colonies1"
+              name="Simulation 1"
               stroke="#82ca9d"
               fill="#82ca9d"
               fillOpacity={0.4}
               strokeWidth={2}
             />
-          </AreaChart>
+
+            {/* Sim 2 - dashed line (no fill to avoid overlap) */}
+            {data2 && (
+              <Line
+                type="monotone"
+                dataKey="colonies2"
+                name="Simulation 2"
+                stroke="#ffc658"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+              />
+            )}
+          </ComposedChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>
