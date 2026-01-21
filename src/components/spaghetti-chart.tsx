@@ -72,7 +72,7 @@ export function SpaghettiChart({ individualSims, individualSims2, isLoading }: S
   const combinedData = Array.from(yearMap.values()).sort((a, b) => a.year - b.year);
 
   return (
-    <Card className="h-full flex flex-col relative">
+    <Card className="h-full min-h-[200px] flex flex-col relative">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Simulation Spread</CardTitle>
       </CardHeader>

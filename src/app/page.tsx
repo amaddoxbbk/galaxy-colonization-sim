@@ -75,7 +75,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen bg-background p-4 flex flex-col overflow-hidden">
+    <div className="min-h-screen lg:h-screen bg-background p-4 flex flex-col lg:overflow-hidden">
       <div className="mx-auto max-w-7xl w-full flex flex-col flex-1 min-h-0">
         <h1 className="text-xl font-bold mb-1">Galaxy Colonization Simulation</h1>
         <p className="text-muted-foreground text-xs mb-3">
@@ -83,8 +83,8 @@ export default function Home() {
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3 flex-1 min-h-0">
-          {/* Sidebar - two forms stacked */}
-          <div className="flex flex-col gap-3 min-h-0">
+          {/* Sidebar - two forms side by side on mobile, stacked on desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-1 lg:flex lg:flex-col gap-3 min-h-0">
             <SimulationForm
               params={params1}
               onParamsChange={setParams1}
@@ -107,8 +107,8 @@ export default function Home() {
             />
           </div>
 
-          {/* Chart grid - constrained to fit */}
-          <div className="grid grid-cols-2 grid-rows-2 gap-3 min-h-0">
+          {/* Chart grid - single column on mobile, 2x2 on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-rows-2 gap-3 min-h-0">
             <ColonizationChart
               data={results1?.timeSeriesData ?? []}
               data2={results2?.timeSeriesData}

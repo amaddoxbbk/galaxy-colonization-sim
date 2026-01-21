@@ -83,7 +83,7 @@ export function StatsPanel({ stats, stats2, isLoading }: StatsPanelProps) {
   ];
 
   return (
-    <Card className="h-full flex flex-col relative">
+    <Card className="h-full min-h-[150px] flex flex-col relative">
       <CardHeader className="pb-1 pt-3 px-3">
         <CardTitle className="text-sm">Key Statistics</CardTitle>
       </CardHeader>

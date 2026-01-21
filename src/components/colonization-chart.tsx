@@ -96,7 +96,7 @@ export function ColonizationChart({ data, data2, isLoading }: ColonizationChartP
     .sort((a, b) => a.year - b.year);
 
   return (
-    <Card className="h-full flex flex-col relative">
+    <Card className="h-full min-h-[200px] flex flex-col relative">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Colonization Progress</CardTitle>
       </CardHeader>

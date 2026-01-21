@@ -94,7 +94,7 @@ export function NewColoniesChart({ data, data2, isLoading }: NewColoniesChartPro
   const minNonZero = Math.min(...allValues) || 1;
 
   return (
-    <Card className="h-full flex flex-col relative">
+    <Card className="h-full min-h-[200px] flex flex-col relative">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">New Colonies Per Round</CardTitle>
       </CardHeader>

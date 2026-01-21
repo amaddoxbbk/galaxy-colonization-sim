@@ -35,17 +35,17 @@ export function SimulationForm({
   };
 
   return (
-    <Card className="flex-1 flex flex-col min-h-0 py-0 gap-0">
-      <CardHeader className="pb-2 pt-3 px-4">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
+    <Card className="flex-1 flex flex-col min-h-0 py-0 gap-0 overflow-hidden">
+      <CardHeader className="pb-1 pt-2 px-2 lg:px-4 lg:pt-3 lg:pb-2 shrink-0">
+        <CardTitle className="text-xs lg:text-sm flex items-center gap-1.5 lg:gap-2">
+          <div className={`w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full ${color}`} />
           {label}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col px-4 pb-4 pt-0 space-y-3 justify-center">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Ship Survival %</Label>
+      <CardContent className="flex-1 flex flex-col px-2 pb-2 lg:px-4 lg:pb-4 pt-0 space-y-1.5 lg:space-y-3 justify-center overflow-auto">
+        <div className="grid grid-cols-2 gap-1.5 lg:gap-2">
+          <div className="space-y-0.5 lg:space-y-1">
+            <Label className="text-[10px] lg:text-xs">Ship Survival %</Label>
             <Input
               type="number"
               step="1"
@@ -56,11 +56,11 @@ export function SimulationForm({
                 handleChange("ship_survival_prob", (parseFloat(e.target.value) / 100).toString())
               }
               disabled={isRunning}
-              className="h-7 text-xs"
+              className="h-6 lg:h-7 text-[10px] lg:text-xs px-1.5 lg:px-3"
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Colony Found %</Label>
+          <div className="space-y-0.5 lg:space-y-1">
+            <Label className="text-[10px] lg:text-xs">Colony Found %</Label>
             <Input
               type="number"
               step="1"
@@ -71,49 +71,49 @@ export function SimulationForm({
                 handleChange("colony_found_prob", (parseFloat(e.target.value) / 100).toString())
               }
               disabled={isRunning}
-              className="h-7 text-xs"
+              className="h-6 lg:h-7 text-[10px] lg:text-xs px-1.5 lg:px-3"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Years/Round</Label>
+        <div className="grid grid-cols-2 gap-1.5 lg:gap-2">
+          <div className="space-y-0.5 lg:space-y-1">
+            <Label className="text-[10px] lg:text-xs">Years/Round</Label>
             <Input
               type="number"
               value={params.years_per_round}
               onChange={(e) => handleChange("years_per_round", e.target.value)}
               disabled={isRunning}
-              className="h-7 text-xs"
+              className="h-6 lg:h-7 text-[10px] lg:text-xs px-1.5 lg:px-3"
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Max Rounds</Label>
+          <div className="space-y-0.5 lg:space-y-1">
+            <Label className="text-[10px] lg:text-xs">Max Rounds</Label>
             <Input
               type="number"
               value={params.max_rounds}
               onChange={(e) => handleChange("max_rounds", e.target.value)}
               disabled={isRunning}
-              className="h-7 text-xs"
+              className="h-6 lg:h-7 text-[10px] lg:text-xs px-1.5 lg:px-3"
             />
           </div>
         </div>
 
-        <div className="space-y-1">
-          <Label className="text-xs">Simulations</Label>
+        <div className="space-y-0.5 lg:space-y-1">
+          <Label className="text-[10px] lg:text-xs">Simulations</Label>
           <Input
             type="number"
             value={params.n_simulations}
             onChange={(e) => handleChange("n_simulations", e.target.value)}
             disabled={isRunning}
-            className="h-7 text-xs"
+            className="h-6 lg:h-7 text-[10px] lg:text-xs px-1.5 lg:px-3"
           />
         </div>
 
-        <div className="flex gap-2 pt-1">
+        <div className="flex gap-1.5 lg:gap-2 pt-0.5 lg:pt-1">
           <Button
             size="sm"
-            className="flex-1 h-7 text-xs"
+            className="flex-1 h-6 lg:h-7 text-[10px] lg:text-xs px-2"
             onClick={onRunSimulation}
             disabled={isRunning}
           >
@@ -122,7 +122,7 @@ export function SimulationForm({
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs"
+            className="h-6 lg:h-7 text-[10px] lg:text-xs px-2"
             onClick={onReset}
             disabled={isRunning}
           >
