@@ -83,8 +83,8 @@ export function StatsPanel({ stats, stats2, isLoading }: StatsPanelProps) {
   ];
 
   return (
-    <Card className="h-full min-h-[150px] flex flex-col relative">
-      <CardHeader className="pb-1 pt-3 px-3">
+    <Card className="h-full min-h-[150px] flex flex-col relative p-0">
+      <CardHeader className="pb-1 pt-2 px-2">
         <CardTitle className="text-sm">Key Statistics</CardTitle>
       </CardHeader>
       {isLoading && (
@@ -92,7 +92,7 @@ export function StatsPanel({ stats, stats2, isLoading }: StatsPanelProps) {
           <p className="text-muted-foreground text-sm">Updating...</p>
         </div>
       )}
-      <CardContent className="flex-1 overflow-auto px-3 pb-2 pt-0">
+      <CardContent className="flex-1 overflow-auto px-2 pb-1 pt-0">
         {/* Header row for compare mode */}
         {stats2 && (
           <div className="grid grid-cols-[1fr_1fr_1fr] gap-1 text-xs font-medium border-b pb-1 mb-1">

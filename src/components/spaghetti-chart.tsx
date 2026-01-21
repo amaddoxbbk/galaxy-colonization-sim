@@ -72,11 +72,11 @@ export function SpaghettiChart({ individualSims, individualSims2, isLoading }: S
   const combinedData = Array.from(yearMap.values()).sort((a, b) => a.year - b.year);
 
   return (
-    <Card className="h-full min-h-[200px] flex flex-col relative">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Simulation Spread</CardTitle>
+    <Card className="h-full min-h-[200px] flex flex-col relative p-0">
+      <CardHeader className="pb-1 pt-2 px-2">
+        <CardTitle className="text-sm">Simulation Spread</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col min-h-0">
+      <CardContent className="flex-1 flex flex-col min-h-0 p-1 pt-0">
         {isLoading && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-xl">
             <p className="text-muted-foreground text-sm">Updating...</p>
@@ -85,7 +85,7 @@ export function SpaghettiChart({ individualSims, individualSims2, isLoading }: S
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={combinedData}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis

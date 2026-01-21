@@ -94,11 +94,11 @@ export function NewColoniesChart({ data, data2, isLoading }: NewColoniesChartPro
   const minNonZero = Math.min(...allValues) || 1;
 
   return (
-    <Card className="h-full min-h-[200px] flex flex-col relative">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">New Colonies Per Round</CardTitle>
+    <Card className="h-full min-h-[200px] flex flex-col relative p-0">
+      <CardHeader className="pb-1 pt-2 px-2">
+        <CardTitle className="text-sm">New Colonies Per Round</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 min-h-0">
+      <CardContent className="flex-1 min-h-0 p-1 pt-0">
         {isLoading && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-xl">
             <p className="text-muted-foreground text-sm">Updating...</p>
@@ -107,7 +107,7 @@ export function NewColoniesChart({ data, data2, isLoading }: NewColoniesChartPro
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={mergedData}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis

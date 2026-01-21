@@ -45,7 +45,7 @@ export function SimulationForm({
       <CardContent className="flex-1 flex flex-col px-2 pb-2 lg:px-4 lg:pb-4 pt-0 space-y-1.5 lg:space-y-3 justify-center overflow-auto">
         <div className="grid grid-cols-2 gap-1.5 lg:gap-2">
           <div className="space-y-0.5 lg:space-y-1">
-            <Label className="text-[10px] lg:text-xs">Ship Survival %</Label>
+            <Label className="text-[10px] lg:text-xs whitespace-nowrap">Survival %</Label>
             <Input
               type="number"
               step="1"
@@ -60,7 +60,7 @@ export function SimulationForm({
             />
           </div>
           <div className="space-y-0.5 lg:space-y-1">
-            <Label className="text-[10px] lg:text-xs">Colony Found %</Label>
+            <Label className="text-[10px] lg:text-xs whitespace-nowrap">Colony %</Label>
             <Input
               type="number"
               step="1"
