@@ -33,7 +33,7 @@ export function SpaghettiChart({ individualSims, individualSims2 }: SpaghettiCha
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Simulation Spread</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[250px]">
+        <CardContent className="flex items-center justify-center h-[180px]">
           <p className="text-muted-foreground text-sm">
             Run a simulation to see results
           </p>
@@ -93,7 +93,7 @@ export function SpaghettiChart({ individualSims, individualSims2 }: SpaghettiCha
         <CardTitle className="text-base">Simulation Spread</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={180}>
           <LineChart
             data={combinedData}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}

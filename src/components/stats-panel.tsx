@@ -41,7 +41,7 @@ export function StatsPanel({ stats, stats2 }: StatsPanelProps) {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Key Statistics</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[250px]">
+        <CardContent className="flex items-center justify-center h-[180px]">
           <p className="text-muted-foreground text-sm">
             Run a simulation to see results
           </p>

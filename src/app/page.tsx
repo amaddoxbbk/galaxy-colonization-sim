@@ -54,15 +54,15 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <div className="mx-auto max-w-7xl">
-        <h1 className="text-2xl font-bold mb-1">Galaxy Colonization Simulation</h1>
-        <p className="text-muted-foreground text-sm mb-4">
+    <div className="h-screen bg-background p-4 flex flex-col overflow-hidden">
+      <div className="mx-auto max-w-7xl w-full flex flex-col flex-1 min-h-0">
+        <h1 className="text-xl font-bold mb-1">Galaxy Colonization Simulation</h1>
+        <p className="text-muted-foreground text-xs mb-3">
           Simulate the spread of civilization across the galaxy over time.
         </p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:items-stretch">
-          <div className="flex flex-col">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3 flex-1 min-h-0">
+          <div className="flex flex-col min-h-0 overflow-auto">
             <SimulationForm
               params={params}
               params2={params2}
@@ -76,7 +76,7 @@ export default function Home() {
               progress2={progress2}
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ColonizationChart
               data={results?.timeSeriesData ?? []}
               data2={compareMode ? results2?.timeSeriesData : undefined}
